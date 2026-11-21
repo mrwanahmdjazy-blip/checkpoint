@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-skin="classic">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>نقطة التفتيش 3D | مفتش السيارات</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d1727'/%3E%3Ctext x='32' y='45' font-size='34' text-anchor='middle'%3E%F0%9F%9A%A7%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="menu-mode">
+
+<div class="app">
+  <header class="hud">
+    <div class="brand">
+      <div class="brand-ico">🚧</div>
+      <div class="brand-text">
+        <h1>نقطة التفتيش</h1>
+        <p id="rankLabel">شرطي متدرب · اليوم 1</p>
+      </div>
+    </div>
+
+    <div class="clock">
+      <div class="clock-top">
+        <span id="clockTime">08:00</span>
+        <span id="clockLeft">340 دقيقة متبقية</span>
+      </div>
+      <div class="clock-bar"><div id="timeFill"></div></div>
+    </div>
+
+    <div class="hud-actions">
+      <div class="money"><span>💵</span><strong id="moneyLabel">400</strong></div>
+      <button class="btn ghost" data-act="inspect">🖥️ الفحص</button>
+      <button class="btn ghost" data-act="missions">🎯 المهام</button>
+      <button class="btn ghost" data-act="shop">🛒 المتجر</button>
+      <button class="btn ghost" data-act="wheel">🎡 الحظ</button>
+      <button class="btn ghost icon-btn" data-act="toggle-sound" id="soundBtn" title="الصوت">🔊</button>
+      <button class="btn ghost icon-btn" data-act="menu" title="القائمة">☰</button>
+      <button class="btn ghost icon-btn" data-act="help" title="مساعدة">❔</button>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+    <canvas id="scene"></canvas>
+
+    <div class="stage-top">
+      <span class="pill" id="carCount">سيارة 1 من 5</span>
+      <span class="pill warn" id="strikes">أخطاء: 0/3</span>
+    </div>
+
+    <div class="crosshair" id="crosshair"><i></i><i></i><i></i><i></i></div>
+    <div class="prompt" id="prompt"></div>
+
+    <div class="weapon-hud hidden" id="weaponHud">
+      <div class="w-icon">🔫</div>
+      <div class="w-body">
+        <div class="w-name">مسدس 9 ملم</div>
+        <div class="w-ammo"><b id="ammoLabel">12</b> / 12 <span id="wState"></span></div>
+      </div>
+    </div>
+
+    <div class="keys-hint">
+      <span><b>WASD</b> حركة</span>
+      <span><b>Shift</b> جري</span>
+      <span><b>E</b> تفاعل</span>
+      <span><b>I</b> لوحة الفحص</span>
+      <span><b>G</b> مسدس</span>
+      <span><b>R</b> تعبئة</span>
+      <span><b>Esc</b> مؤشر</span>
+    </div>
+
+    <div class="driver-card" id="driverCard"></div>
+    <div class="banner" id="banner"></div>
+    <div class="stage-loading" id="stageLoading">جارٍ بناء نقطة التفتيش…</div>
+    <div class="lock-overlay" id="lockOverlay">
+      <div class="lock-box">
+        <div class="lock-ico">🖱️</div>
+        <strong>انقر على الشاشة للبدء</strong>
+        <span>حرّك الماوس للنظر · WASD للمشي · E للتفاعل · G لإخراج المسدس</span>
+      </div>
+    </div>
+  </main>
+
+  <footer class="foot">اقترب من السائق أو الصندوق واضغط E · استخدم جهاز التفتيش في الكشك لفحص الأجهزة · المسدس للخطر فقط.</footer>
+</div>
+
+<!-- جهاز التفتيش -->
+<div class="inspect" id="inspect">
+  <div class="inspect-card">
+    <div class="inspect-head">
+      <div class="inspect-title">🖥️ جهاز التفتيش — الملف <span id="caseId">—</span></div>
+      <button class="btn ghost small" data-act="close-inspect">إغلاق (Esc)</button>
+    </div>
+    <div class="inspect-body">
+      <section class="panel side">
+        <div class="panel-title">مؤشر الاشتباه</div>
+        <div class="meter"><div class="meter-fill" id="meterFill"></div><span class="meter-mark"></span></div>
+        <div class="meter-legend"><span>آمن</span><span>مشتبه</span><span>خطر</span></div>
+        <div class="hint" id="hintBox"></div>
+        <div class="suggest" id="suggestBox"></div>
+        <div class="papers-line" id="papersLine"></div>
+        <div class="clues" id="clues"></div>
+        <div class="actions">
+          <button class="btn ghost wide" data-act="papers">🆔 أطلب أوراق السائق · 10 د</button>
+          <button class="btn danger big" data-act="arrest">🚨 إرسال للسجن</button>
+          <button class="btn ghost wide" data-act="pass">السماح بالمرور · 5 د</button>
+        </div>
+      </section>
+      <section class="panel devices-panel">
+        <div class="panel-title">أجهزة التفتيش <span class="sub" id="scanInfo"></span></div>
+        <div class="device-grid" id="deviceGrid"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- شاشة البداية -->
+<div class="start-screen" id="startScreen">
+  <div class="start-vignette"></div>
+  <div class="start-inner">
+    <div class="start-badge">🚧</div>
+    <h1 class="start-title">نقطة التفتيش</h1>
+    <p class="start-sub">مفتش سيارات ليلي — تحرّك، تحدّث، فتّش، واعتقل المتنكرين قبل أن يعبروا البوابة</p>
+    <div class="start-actions">
+      <button class="btn primary big start-primary" data-act="start-new">▶ ابدأ وردية جديدة</button>
+      <button class="btn big hidden" id="resumeBtn" data-act="resume">↩ متابعة الوردية — اليوم <span id="resumeDay">1</span></button>
+      <div class="start-row">
+        <button class="btn ghost" data-act="how-to">📖 كيف تلعب</button>
+        <button class="btn ghost" data-act="toggle-sound">🔊 الصوت</button>
+      </div>
+    </div>
+    <div class="start-progress" id="startProgress"></div>
+    <div class="start-foot">عالم ثلاثي الأبعاد بمنظور أول · ٢٤ جهاز تفتيش · مسدس · مهام ورشاوى وعجلة حظ</div>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script src="vendor/three.min.js"></script>
+<script src="audio.js"></script>
+<script src="scene3d.js"></script>
+<script src="player.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
